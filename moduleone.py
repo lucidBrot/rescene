@@ -91,19 +91,25 @@ class Rescener():
         return actual_coords
 
     def get_colors_for_direction(self, direction, lookup_color):
+        """
+            returns a 3-tuple of lists. They are the color values.
+        """
         y,x = direction
         threshold = self.color_similarity_threshold
         # get the indices of the colors similar enough to the lookup color
         pixelwise_colordistance = self.image_np - lookup_color[None, None, :]
         pixelwise_colordistance_norm = np.linalg.norm(pixelwise_colordistance, axis=2)
-        flat_candidate_coords = np.flatnonzero(np.linalg.norm(pixelwise_colordistance_norm - threshold))
+        flat_candidate_coords = np.flatnonzero(pixelwise_colordistance_norm < threshold)
+        # use the direction from the candidate coord. Compute the new index in the flat array
+        flat_candidate_coords = [coord + self.image_np.shape[1] * direction[0] + direction[1] for coord in flat_candidate_coords]
 
-        # return all colors to the $direction of the candidates. as a list.
+        # get the color of the candidate pixels as a three-array each by converting them to 2d access again.
+        colors_0 = np.take(self.image_np[...,0], flat_candidate_coords, mode='clip')
+        colors_1 = np.take(self.image_np[...,1], flat_candidate_coords, mode='clip')
+        colors_2 = np.take(self.image_np[...,2], flat_candidate_coords, mode='clip')
         # take also uses the flat view when no axis is specified
         # The mode 'clip' means we repeat on the border.
-        color_arr = np.take(self.image_np, flat_candidate_coords, mode='clip')
-        return color_arr
-        
+        return (colors_0, colors_1, colors_2)
 
     def start (self, use_gui=True):
         # choose midpoint color randomly
@@ -129,8 +135,9 @@ class Rescener():
             # want to propagate a possible color by looking at every pixel with roughly
             # $CURRENT_COLOR and seeing what is there.
             direction = (y-h,x-w)
-            color_options = self.get_colors_for_direction(direction, lookup_color = self.target_image[h,w,:])
-            color_chosen = self.rng.choice(color_options)
+            color_options = self.get_colors_for_direction(direction, lookup_color = self.target_image[h,w,:]) # a 3-tuple of lists.
+            color_index = self.rng.choice(len(color_options[0]))
+            color_chosen = np.c_[color_options[0][color_index], color_options[1][color_index], color_options[2][color_index]]
             self.target_image[y,x,:] = color_chosen
             self.logger.debug(f"[start]: {color_chosen=}")
 
