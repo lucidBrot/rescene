@@ -157,6 +157,8 @@ class Rescener():
             if num_pixels_colored_in_target % 10 == 0:
                 self.logger.info(f"[start]: Saving wip at {num_pixels_colored_in_target}/{np.product(self.target_image.shape[:2])}")
                 cv2.imwrite(self.output_path, self.target_image)
+                cv2.imshow("target", self.target_image)
+                cv2.waitKey(1) # seems to be needed.
                 self.logger.debug(f"[init]: wip Image values: {self.target_image.min()=},{self.target_image.max()=}")
 
             self.logger.debug(f"[start]: Progress: {num_pixels_colored_in_target}/{np.product(self.target_image.shape[:2])}")
@@ -166,8 +168,8 @@ class Rescener():
         cv2.imwrite(self.output_path, self.target_image)
 
 def main():
-    rescener = Rescener( image_path = "./input_image.png",
-                output_path = "./output_image.png",
+    rescener = Rescener( image_path = "./input_image_fire.png",
+                output_path = "./output_image_fire.png",
                 color_similarity_threshold = 4)
     rescener.start(use_gui=False)
 
