@@ -66,7 +66,7 @@ class Rescener():
         self.logger.setLevel(logging.DEBUG)
         self.image_path = image_path
         self.output_path = output_path
-        self.name = os.path.splitext(os.path.basename(self.output_path))[0])
+        self.name = os.path.splitext(os.path.basename(self.output_path))[0]
         # [H, W, RGB]
         #self.image_np = load_numpy_image( image_path )
         self.image_np = cv2.imread(image_path)
@@ -178,13 +178,13 @@ class Rescener():
         # save resulting image.
         cv2.imwrite(self.output_path, self.target_image)
 
-def output_path ( something_specified_by_the_user, args )
+def output_path ( something_specified_by_the_user, args ):
     if os.isdir( something_specified_by_the_user ) or \
             ( something_specified_by_the_user.endswith('/') and not os.path.isfile(something_specified_by_the_user) ):
                 # this is a directory, or should be one.
                 os.makedirs ( os.path.abspath(something_specified_by_the_user), exist_ok=True )
                 # come up with a good filename
-                name = os.path.splitext(os.path.basename(args.input))[0])
+                name = os.path.splitext(os.path.basename(args.input))[0]
                 filename_glob = f"output_{name}_cst{args.color_similarity_threshold}_*.png"
                 # see how many same files already exist
                 counter = len(glob.glob(filename_glob))
