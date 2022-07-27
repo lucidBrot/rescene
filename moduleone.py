@@ -36,6 +36,7 @@ from PIL import Image
 import numpy as np
 import itertools
 import cv2
+import logging
 
 def load_numpy_image (infilename ):
     """
@@ -50,11 +51,15 @@ class Rescener():
     CANARY_UNSET = -1
 
     def __init__ (self, image_path, output_path, color_similarity_threshold = 4):
+        logging.basicConfig()
+        self.logger = logging.getLogger("Rescener")
+        self.logger.setLevel(logging.DEBUG)
         self.image_path = image_path
         self.output_path = output_path
         # [H, W, RGB]
         #self.image_np = load_numpy_image( image_path )
         self.image_np = cv2.imread(image_path)
+        self.logger.debug(f"[init]: Original Image values: {self.image_np.max()=}")
         self.color_similarity_threshold = color_similarity_threshold
         self.rng = np.random.default_rng()
         # [H, W, RGB]
@@ -91,7 +96,7 @@ class Rescener():
         # get the indices of the colors similar enough to the lookup color
         pixelwise_colordistance = self.image_np - lookup_color[None, None, :]
         pixelwise_colordistance_norm = np.linalg.norm(pixelwise_colordistance, axis=2)
-        flat_candidate_coords = np.linalg.norm((pixelwise_colordistance_norm).reshape((-1,)) - threshold).nonzero()
+        flat_candidate_coords = np.flatnonzero(np.linalg.norm(pixelwise_colordistance_norm - threshold))
 
         # return all colors to the $direction of the candidates. as a list.
         # take also uses the flat view when no axis is specified
@@ -107,7 +112,9 @@ class Rescener():
         self.target_image[h,w,:] = self.image_np[rh, rw,:]
         # add it to our working set of borderset pixels
         self.borderset_pixels = {(h,w)}
+        self.logger.debug(f"[start]: chose midpoint at {(h,w)} in image of size {self.image_np.shape}")
         
+        num_pixels_colored_in_target = 1
         while self.borderset_pixels:
             # while not empty working set, do work on one pixel after the other. Randomly.
             h,w = self.rng.choice(tuple(self.borderset_pixels))
@@ -116,6 +123,7 @@ class Rescener():
             neighbour_coords = [(y,x) for (y,x) in self.neighbouring_coords_of(h,w) if (self.target_image[y,x] != Rescener.CANARY_UNSET).all()]
             if len(neighbour_coords) == 0:
                 self.borderset_pixels.remove((h,w))
+                self.logger.debug(f"[start]: removed pixel {(h,w)} from working set.")
                 continue
             y,x = self.rng.choice(neighbour_coords)
             # want to propagate a possible color by looking at every pixel with roughly
@@ -124,13 +132,28 @@ class Rescener():
             color_options = self.get_colors_for_direction(direction, lookup_color = self.target_image[h,w,:])
             color_chosen = self.rng.choice(color_options)
             self.target_image[y,x,:] = color_chosen
+            self.logger.debug(f"[start]: {color_chosen=}")
 
             # add new option to working set.
             self.borderset_pixels.add((y,x))
+            self.logger.debug(f"[start]: added pixel {(h,w)} to working set.")
 
             # update the shown image
             if use_gui:
+                # TODO: replace the unset color values with something in color range?
+                # because something is still broken here.
+                cv2.imshow('original', self.image_np)
                 cv2.imshow('target', self.target_image)
+                cv2.waitKey(0)
+                self.logger.debug(f"[start]: Displaying Image.")
+
+            if num_pixels_colored_in_target % 10 == 0:
+                self.logger.info(f"[start]: Saving wip at {num_pixels_colored_in_target}/{np.product(self.target_image.shape[:2])}")
+                cv2.imwrite(self.output_path, self.target_image)
+                self.logger.debug(f"[init]: wip Image values: {self.target_image.min()=},{self.target_image.max()=}")
+
+            self.logger.debug(f"[start]: Progress: {num_pixels_colored_in_target}/{np.product(self.target_image.shape[:2])}")
+            num_pixels_colored_in_target += 1
 
         # save resulting image.
         cv2.imwrite(self.output_path, self.target_image)
@@ -139,7 +162,7 @@ def main():
     rescener = Rescener( image_path = "./input_image.png",
                 output_path = "./output_image.png",
                 color_similarity_threshold = 4)
-    rescener.start(use_gui=True)
+    rescener.start(use_gui=False)
 
 if __name__ == "__main__":
     main()
