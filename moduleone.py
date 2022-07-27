@@ -36,6 +36,7 @@
 # TODO: allow user to choose starting color, or even colors to give more bias to.
 # TODO: allow varying pixel sizes for colors?
 # TODO: I could do edge detection and do less ball-like expansion and instead follow a direction for longer if the origin of the chosen color is near an edge
+# TODO: option to be less sharp by considering only colors that work for *every* neighbour instead of just for one?
 
 from dataclasses import dataclass
 from PIL import Image
