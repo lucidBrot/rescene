@@ -42,6 +42,9 @@ import numpy as np
 import itertools
 import cv2
 import logging
+import os
+import argparse
+import glob
 
 def load_numpy_image (infilename ):
     """
@@ -61,6 +64,7 @@ class Rescener():
         self.logger.setLevel(logging.DEBUG)
         self.image_path = image_path
         self.output_path = output_path
+        self.name = os.path.splitext(os.path.basename(self.output_path))[0])
         # [H, W, RGB]
         #self.image_np = load_numpy_image( image_path )
         self.image_np = cv2.imread(image_path)
@@ -162,7 +166,7 @@ class Rescener():
             if num_pixels_colored_in_target % 10 == 0:
                 self.logger.info(f"[start]: Saving wip at {num_pixels_colored_in_target}/{np.product(self.target_image.shape[:2])}")
                 cv2.imwrite(self.output_path, self.target_image)
-                cv2.imshow("target", self.target_image)
+                cv2.imshow(self.name, self.target_image)
                 cv2.waitKey(1) # seems to be needed.
                 self.logger.debug(f"[init]: wip Image values: {self.target_image.min()=},{self.target_image.max()=}")
 
@@ -172,10 +176,35 @@ class Rescener():
         # save resulting image.
         cv2.imwrite(self.output_path, self.target_image)
 
+def output_path ( something_specified_by_the_user, args )
+    if os.isdir( something_specified_by_the_user ) or \
+            ( something_specified_by_the_user.endswith('/') and not os.path.isfile(something_specified_by_the_user) ):
+                # this is a directory, or should be one.
+                os.makedirs ( os.path.abspath(something_specified_by_the_user), exist_ok=True )
+                # come up with a good filename
+                name = os.path.splitext(os.path.basename(args.input))[0])
+                filename_glob = f"output_{name}_cst{args.color_similarity_threshold}_*.png"
+                # see how many same files already exist
+                counter = len(glob.glob(filename_glob))
+                filename = f"output_{name}_cst{args.color_similarity_threshold}_{counter}.png"
+                return os.path.join( something_specified_by_the_user, filename )
+    else:
+        # the path is to a file. maybe it exists, maybe it does not.
+        return os.path.normpath ( something_specified_by_the_user )
+
+
 def main():
-    rescener = Rescener( image_path = "./input_image_fire.png",
-                output_path = "./output_image_fire2.png",
-                color_similarity_threshold = 4)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input', help='Path to input image', required=True)
+    parser.add_argument('-o', '--output', help='Path to output image. May be a directory path.')
+    # TODO: if output is a directory, build name from input filename and params
+    parser.add_argument('--color-similarity', '--cst', metavar = 'color_similarity_threshold', help='Higher number means more color values permitted in any step. The check is "norm(R,G,B) < CST", where CST is what you specify here and R,G,B are values in [0,255].', default=2)
+    args = parser.parse_args()
+
+    # The higher the threshold, the more color variance there is
+    rescener = Rescener( image_path = args.input,
+                output_path = output_path(args.output, args),
+                color_similarity_threshold = args.color_similarity_threshold)
     rescener.start(use_gui=False)
 
 if __name__ == "__main__":
