@@ -30,6 +30,9 @@
 #
 #       In the future, I could add retaining of structures. E.g. using edge detection. Or wider
 #       pattern-matching.
+# TODO: speedup
+# TODO: option to pause and continue?
+# TODO: cli arguments for input and output files.
 
 from dataclasses import dataclass
 from PIL import Image
@@ -169,7 +172,7 @@ class Rescener():
 
 def main():
     rescener = Rescener( image_path = "./input_image_fire.png",
-                output_path = "./output_image_fire.png",
+                output_path = "./output_image_fire2.png",
                 color_similarity_threshold = 4)
     rescener.start(use_gui=False)
 
