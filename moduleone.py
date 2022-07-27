@@ -34,6 +34,7 @@
 # TODO: option to pause and continue?
 # TODO: cli arguments for input and output files.
 # TODO: allow user to choose starting color, or even colors to give more bias to.
+# TODO: I could do edge detection and do less ball-like expansion and instead follow a direction for longer if the origin of the chosen color is near an edge
 
 from dataclasses import dataclass
 from PIL import Image
