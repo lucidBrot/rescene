@@ -48,7 +48,7 @@ def load_numpy_image (infilename ):
     return data
 
 class Rescener():
-    CANARY_UNSET = -1
+    CANARY_UNSET = 137
 
     def __init__ (self, image_path, output_path, color_similarity_threshold = 4):
         logging.basicConfig()
@@ -126,7 +126,7 @@ class Rescener():
             h,w = self.rng.choice(tuple(self.borderset_pixels))
             # If all neighbours are set, remove from working list and continue.
             # Else, choose a random one.
-            neighbour_coords = [(y,x) for (y,x) in self.neighbouring_coords_of(h,w) if (self.target_image[y,x] != Rescener.CANARY_UNSET).all()]
+            neighbour_coords = [(y,x) for (y,x) in self.neighbouring_coords_of(h,w) if (self.target_image[y,x] == Rescener.CANARY_UNSET).all()]
             if len(neighbour_coords) == 0:
                 self.borderset_pixels.remove((h,w))
                 self.logger.debug(f"[start]: removed pixel {(h,w)} from working set.")
