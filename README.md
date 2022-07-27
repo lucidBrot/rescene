@@ -10,3 +10,8 @@ There will be more options as I find time and joy creating them. The current ver
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | ![input_image_powerplant](README.assets/input_image_powerplant.png) | ![output_image_powerplant1_val2](README.assets/output_image_powerplant1_val2.png) | ![output_image_powerplant2_val20](README.assets/output_image_powerplant2_val20-16589471745984.png) |
 
+Future additions will explore in the directions of
+
+* speed
+* preserving feelings of roundness
+* preserving structures without preserving meaning

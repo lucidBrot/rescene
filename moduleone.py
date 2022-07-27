@@ -157,19 +157,12 @@ class Rescener():
             self.logger.debug(f"[start]: added pixel {(h,w)} to working set.")
 
             # update the shown image
-            if use_gui:
-                # TODO: replace the unset color values with something in color range?
-                # because something is still broken here.
-                cv2.imshow('original', self.image_np)
-                cv2.imshow('target', self.target_image)
-                cv2.waitKey(0)
-                self.logger.debug(f"[start]: Displaying Image.")
-
             if num_pixels_colored_in_target % 10 == 0:
                 self.logger.info(f"[start]: Saving wip at {num_pixels_colored_in_target}/{np.product(self.target_image.shape[:2])}")
                 cv2.imwrite(self.output_path, self.target_image)
-                cv2.imshow(self.name, self.target_image)
-                cv2.waitKey(1) # seems to be needed.
+                if use_gui:
+                    cv2.imshow(self.name, self.target_image)
+                    cv2.waitKey(1) # seems to be needed.
                 self.logger.debug(f"[init]: wip Image values: {self.target_image.min()=},{self.target_image.max()=}")
 
             self.logger.debug(f"[start]: Progress: {num_pixels_colored_in_target}/{np.product(self.target_image.shape[:2])}")
@@ -179,15 +172,20 @@ class Rescener():
         cv2.imwrite(self.output_path, self.target_image)
 
 def output_path ( something_specified_by_the_user, args ):
-    if os.isdir( something_specified_by_the_user ) or \
+    if os.path.isdir( something_specified_by_the_user ) or \
             ( something_specified_by_the_user.endswith('/') and not os.path.isfile(something_specified_by_the_user) ):
                 # this is a directory, or should be one.
                 os.makedirs ( os.path.abspath(something_specified_by_the_user), exist_ok=True )
                 # come up with a good filename
                 name = os.path.splitext(os.path.basename(args.input))[0]
+                if len(name) > len("input_"):
+                    if name.startswith("input"):
+                        name = name[len("input"):]
+                    if name.startswith("_"):
+                        name = name[1:]
                 filename_glob = f"output_{name}_cst{args.color_similarity_threshold}_*.png"
                 # see how many same files already exist
-                counter = len(glob.glob(filename_glob))
+                counter = len(glob.glob(os.path.join(something_specified_by_the_user, filename_glob)))
                 filename = f"output_{name}_cst{args.color_similarity_threshold}_{counter}.png"
                 return os.path.join( something_specified_by_the_user, filename )
     else:
@@ -200,14 +198,21 @@ def main():
     parser.add_argument('-i', '--input', help='Path to input image', required=True)
     parser.add_argument('-o', '--output', help='Path to output image. May be a directory path.')
     # TODO: if output is a directory, build name from input filename and params
-    parser.add_argument('--color-similarity', '--cst', metavar = 'color_similarity_threshold', help='Higher number means more color values permitted in any step. The check is "norm(R,G,B) < CST", where CST is what you specify here and R,G,B are values in [0,255].', default=2)
+    parser.add_argument('--color-similarity-threshold', '--cst', metavar = 'threshold', help='Higher number means more color values permitted in any step. The check is "norm(R,G,B) < CST", where CST is what you specify here and R,G,B are values in [0,255].', default=2, type=float)
+
+    group1 = parser.add_mutually_exclusive_group()
+    group1.add_argument('--gui', action='store_true', default=True, help='Show the image growing live.')
+    group1.add_argument('--no-gui', action='store_true', default=False, help='Show the image growing live.')
+
     args = parser.parse_args()
+    if args.no_gui:
+        args.gui = False
 
     # The higher the threshold, the more color variance there is
     rescener = Rescener( image_path = args.input,
                 output_path = output_path(args.output, args),
                 color_similarity_threshold = args.color_similarity_threshold)
-    rescener.start(use_gui=False)
+    rescener.start(use_gui=args.gui)
 
 if __name__ == "__main__":
     main()
